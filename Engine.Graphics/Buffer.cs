@@ -15,6 +15,7 @@ namespace Engine.Graphics
 
         public unsafe void SetData(T[] data, VertexBufferObjectUsage usage)
         {
+            if(data.Length < 1) { return; }
             fixed (T* ptr = &data[0])
             {
                 gl.NamedBufferData(m_Handle, (nuint)(sizeof(T) * data.Length), ptr, usage);

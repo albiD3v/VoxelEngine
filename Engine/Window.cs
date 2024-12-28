@@ -1,4 +1,5 @@
 ﻿using Silk.NET.GLFW;
+using System.Numerics;
 
 namespace Engine
 {
@@ -8,6 +9,14 @@ namespace Engine
         internal readonly unsafe WindowHandle* handle;
 
         private bool vsync = false;
+
+        public delegate void OnKeyPressDelegate(Keys key, KeyModifiers modifiers);
+        public delegate void OnKeyRepeatDelegate(Keys key, KeyModifiers modifiers);
+        public delegate void OnKeyReleaseDelegate(Keys key, KeyModifiers modifiers);
+
+        public event OnKeyPressDelegate? OnKeyPress;
+        public event OnKeyRepeatDelegate? OnKeyRepeat;
+        public event OnKeyReleaseDelegate? OnKeyRelease;
 
         public bool Vsync
         {
@@ -26,14 +35,18 @@ namespace Engine
             handle = glfw.CreateWindow(width, height, title, null, null);
 
             glfw.SwapInterval(0);
+            glfw.SetKeyCallback(handle, (window, key, scanCode, action, mods) =>
+            {
+                switch (action)
+                {
+                    case InputAction.Press:   OnKeyPress?.Invoke(key, mods); break;
+                    case InputAction.Repeat:  OnKeyRepeat?.Invoke(key, mods); break;
+                    case InputAction.Release: OnKeyRelease?.Invoke(key, mods); break;
+                }
+            });
         }
 
         public Window(Glfw glfw) : this(glfw, 1280, 720, "Voxel Engine") { }
-
-        public void SwapInterval(int value)
-        {
-            glfw.SwapInterval(value);
-        }
 
         public unsafe void MakeCurrent()
         {
@@ -43,6 +56,22 @@ namespace Engine
         public unsafe void SwapBuffers()
         {
             glfw.SwapBuffers(handle);
+        }
+
+        public unsafe bool ShouldClose()
+        {
+            return glfw.WindowShouldClose(handle);
+        }
+
+        public unsafe bool IsKeyPressed(Keys key)
+        {
+            return glfw.GetKey(handle, key) == 1;
+        }
+
+        public unsafe Vector2 GetCursorPos()
+        {
+            glfw.GetCursorPos(handle, out double x, out double y);
+            return new Vector2((float)x, (float)y);
         }
     }
 }
